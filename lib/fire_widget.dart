@@ -48,7 +48,7 @@ class _FireWidgetState extends State<FireWidget> with SingleTickerProviderStateM
           Center(
             child: CustomPaint(
               painter: FirePainter(_flameSize),
-              size: Size(600, 700),
+              size: Size(600, 500),
             ),
           ),
         ],
@@ -91,30 +91,49 @@ class FirePainter extends CustomPainter {
 
   @override
 void paint(Canvas canvas, Size size) {
-    canvas.save(); // Tallenna nykyinen tila
+    canvas.save();
 
-    // **Tarkempi sijainti:** Säädetään liekkiä sopimaan takan sisään
-    canvas.translate(size.width / 2, size.height - 200); // Siirretään ylemmäs
-    canvas.scale(flameSize * 0.9, flameSize * 0.6); // Tasapainotetaan liekin kokoa
+    int flames = 18; // 🔥 18 vierekkäistä liekkikomponenttia
+    double flameWidth = 12; // **Kapeampi yksittäinen liekki**
+    double baseHeight = 0.1; // 🔥 **Liekki kokonaisuudessaan matalampi**
 
-    final Paint paint = Paint()
-      ..style = PaintingStyle.fill;
+    for (int i = 0; i < flames; i++) {
+      double flameOffset = (i - flames / 2) * flameWidth; // Jakaa liekit tasaisesti vaakasuunnassa
+      
+      // **Reunaliekit lähes olemattomia, keskellä korkeimmat**
+      double edgeFactor = (i / (flames - 1) - 0.5).abs(); // 0 keskellä, ~0.5 reunoilla
+      double heightModifier = baseHeight + (1 - edgeFactor) * 1.2; // Reunoilla matalampi
+      
+      if (edgeFactor > 0.45) { 
+        heightModifier *= 0.4; // **Häivytetään lähes kokonaan reunoilta**
+      } else if (edgeFactor > 0.3) {
+        heightModifier *= 0.7; // **Vähennetään korkeutta asteittain**
+      }
+      
+      canvas.save();
+      canvas.translate(size.width / 2 + flameOffset, size.height - 100); // Keskitetään korkeussuunnassa. Miinus nostaa ylöspäin
+      canvas.scale(flameSize * 0.9, flameSize * heightModifier); // **Skaalaus uusilla arvoilla**
 
-    for (int i = 0; i < 550; i++) { 
-  double x = _random.nextDouble() * 60 - 30; 
-  double y = -_random.nextDouble() * 200 - (sin(time + i) * 15); 
-  double radius = _random.nextDouble() * 1.5 + 0.6; // **Pienemmät partikkelit**
+      final Paint paint = Paint()..style = PaintingStyle.fill;
 
-  paint.color = Color.lerp(
-      _random.nextBool() ? Colors.deepOrange : Colors.red,
-      Colors.yellow,
-      _random.nextDouble()
-    )!.withOpacity(0.75);
+      for (int j = 0; j < 80; j++) { // Jokainen liekki sisältää omat partikkelinsa
+        double x = _random.nextDouble() * 16 - 8; // **Kapeampi jakautuminen**
+        double y = -_random.nextDouble() * 100 - (sin(time * 2 + j) * 6);
+        double radius = _random.nextDouble() * 1.5 + 0.4; // 🔥 **Vielä pienemmät partikkelit**
 
-  canvas.drawCircle(Offset(x, y), radius, paint);
-}
+        paint.color = Color.lerp(
+            _random.nextBool() ? Colors.deepOrange : Colors.red,
+            Colors.yellow,
+            _random.nextDouble()
+          )!.withOpacity(0.7 + _random.nextDouble() * 0.2); // **Pieni vaihtelu läpinäkyvyydessä**
 
-    canvas.restore(); // Palauta alkuperäinen tila
+        canvas.drawCircle(Offset(x, y), radius, paint);
+      }
+
+      canvas.restore();
+    }
+
+    canvas.restore();
 }
 
   @override
